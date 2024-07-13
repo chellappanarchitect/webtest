@@ -12,4 +12,9 @@ public class TestController {
 	public String getData() {
 		return "Frist message from AWS Ecs";
 	}
+	
+	@GetMapping("/message")
+	public String getMessage() {
+		return "second message from AWS Ecs";
+	}
 }
