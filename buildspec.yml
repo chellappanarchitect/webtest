@@ -1,0 +1,37 @@
+version: 0.2
+phases:
+  pre_build:
+    commands:
+      - echo logging into Amazon ECR....
+      - aws --version
+      # proivide login command
+      - aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin 905418214303.dkr.ecr.ap-south-1.amazonaws.com
+      # replace with this to your repository
+      - REPOSITPRY_URI=905418214303.dkr.ecr.ap-south-1.amazonaws.com/webtest-ecr
+      - IMAGE_TAG=build-$(echo $CODEBUILD_BUILD_ID | awk -F":" '{print $2}')
+      - echo $IMAGE_TAG
+  build:
+    commands:
+      - echo build started...
+      - echo building jar file
+      - mvn clean install
+      - echo building the docker image
+      - docker build -t $REPOSITPRY_URI:latest .
+      - docker tag $REPOSITPRY_URI:latest $REPOSITPRY_URI:$IMAGE_TAG
+  post_build:
+    commands:
+      - echo build completed on...
+      - echo pushing to repo
+      - docker push $REPOSITPRY_URI:latest
+      - docker push $REPOSITPRY_URI:$IMAGE_TAG
+      - echo writing image definition file
+      # give your container name
+      - DOCKER_CONTAINER_NAME=webtest-ecr-container
+      - printf '[{"name":"%s","imageUri":"%s"}]' $DOCKER_CONTAINER_NAME $REPOSITPRY_URI:$IMAGE_TAG > imagedefinitions.json
+      - echo $DOCKER_CONTAINER_NAME
+      - echo printing imagedefinitions.json
+      - cat imagedefinitions.json
+artifacts:
+  files:
+    - imagedefinitions.json
+    - taget/webtest.jar
